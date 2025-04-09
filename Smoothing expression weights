@@ -1,0 +1,21 @@
+import pandas as pd
+
+# Assume df is your Hume data
+# Columns: ['subject', 'frame', 'timestamp', 'expr1_weight', 'expr2_weight', 'expr3_weight']
+
+# Sort by subject and frame
+df = df.sort_values(['subject', 'frame'])
+
+# Apply a simple moving average smoothing to expression weights
+window_size = 5  # number of frames to average over
+
+(Will try this with different numbers of frames for smoothing)
+
+# Smoothing function
+def smooth_expression_weights(group):
+    return group[['expr1_weight', 'expr2_weight', 'expr3_weight']].rolling(window=window_size, center=True, min_periods=1).mean()
+
+# Apply smoothing per subject
+df[['expr1_weight', 'expr2_weight', 'expr3_weight']] = df.groupby('subject', group_keys=False).apply(smooth_expression_weights)
+
+# Now df has smoothed expression weights!
