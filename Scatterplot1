@@ -1,0 +1,16 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# This file creates a scatterplot of dyad synchrony and dyad numeric difference in chronotype
+
+# Scatterplot
+plt.figure(figsize=(8,6))
+sns.scatterplot(data=dyad_df, x='chronotype_difference', y='synchrony', hue='team', s=100)
+
+plt.title('Facial Synchrony vs Chronotype Difference')
+plt.xlabel('Chronotype Difference (absolute)')
+plt.ylabel('Facial Synchrony')
+plt.axhline(0, color='gray', linestyle='--')
+plt.grid(True)
+plt.legend(title='Team')
+plt.show()
