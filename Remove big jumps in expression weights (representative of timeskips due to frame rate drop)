@@ -2,16 +2,25 @@
 df['expr_change'] = df.groupby('subject')[emotion_columns]\
                       .diff().abs().sum(axis=1)
 
-# Set threshold (global across all subjects) or you could do per-subject
+# Set a threshold (global or per team; here we keep it global)
 threshold = df['expr_change'].quantile(0.95)
 
 # Flag big jumps
 df['big_jump'] = df['expr_change'] > threshold
 
-# Now: Find all bad frames across all subjects
-bad_frames = df[df['big_jump']]['frame'].unique()
+# Initialize empty list to collect cleaned team data
+cleaned_team_data = []
 
-# Remove these bad frames globally for everyone
-clean_df = df[~df['frame'].isin(bad_frames)].copy()
+# Loop through each team separately
+for team_id, team_data in df.groupby('team'):
 
-print(f"Removed {len(bad_frames)} frames globally due to big expression changes.")
+    # Find bad frames within this team
+    bad_frames = team_data[team_data['big_jump']]['frame'].unique()
+    
+    # Remove bad frames for all subjects in this team
+    team_clean = team_data[~team_data['frame'].isin(bad_frames)].copy()
+    
+    cleaned_team_data.append(team_clean)
+
+# Concatenate all cleaned teams back together
+clean_df = pd.concat(cleaned_team_data_
