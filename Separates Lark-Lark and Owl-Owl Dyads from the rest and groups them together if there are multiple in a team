@@ -1,0 +1,48 @@
+# Define chronotype cutoff
+chronotype_cutoff = 50  # Example: <=50 = Lark, >50 = Owl
+
+# Add a chronotype group label
+subject_info['chrono_group'] = subject_info['chronotype_score'].apply(
+    lambda x: 'Lark' if x <= chronotype_cutoff else 'Owl'
+)
+
+# Merge again to main df
+df = df.merge(subject_info[['subject', 'chrono_group']], on='subject', how='left')
+
+# Create an empty list to store lark-lark and owl-owl dyads
+grouped_dyad_rows = []
+
+# Loop through each team
+for team_id, team_data in df.groupby('team'):
+
+    # Group by chrono group inside each team
+    for chrono_group, group_data in team_data.groupby('chrono_group'):
+
+        subjects = group_data['subject'].unique()
+
+        # All possible subject pairs within the group
+        for subj1, subj2 in itertools.combinations(subjects, 2):
+
+            subj1_data = group_data[group_data['subject'] == subj1]
+            subj2_data = group_data[group_data['subject'] == subj2]
+
+            # Merge by frame
+            merged = pd.merge(subj1_data, subj2_data, on=['frame'], suffixes=('_1', '_2'))
+
+            # Compute synchrony across emotions
+            synchrony = merged[[col+'_1' for col in emotion_columns]].corrwith(
+                            merged[[col+'_2' for col in emotion_columns]]).mean()
+
+            grouped_dyad_rows.append({
+                'team': team_id,
+                'chrono_group': chrono_group,
+                'subject1': subj1,
+                'subject2': subj2,
+                'synchrony': synchrony
+            })
+
+# Convert to DataFrame
+grouped_dyad_df = pd.DataFrame(grouped_dyad_rows)
+
+# Show grouped dyad table
+grouped_dyad_df.head()
