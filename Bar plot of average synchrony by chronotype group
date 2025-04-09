@@ -1,0 +1,9 @@
+# Bar plot
+plt.figure(figsize=(7,5))
+sns.barplot(data=grouped_dyad_df, x='chrono_group', y='synchrony', ci='sd', palette='muted')
+
+plt.title('Average Facial Synchrony by Chrono Group')
+plt.xlabel('Chronotype Group (Dyad Type)')
+plt.ylabel('Average Synchrony')
+plt.grid(axis='y')
+plt.show()
