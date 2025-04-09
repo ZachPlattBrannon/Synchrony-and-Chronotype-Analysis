@@ -1,0 +1,9 @@
+plt.figure(figsize=(7,5))
+sns.boxplot(data=slope_df, x='alignment', y='slope', palette='muted')
+sns.stripplot(data=slope_df, x='alignment', y='slope', color='black', size=8, jitter=True)
+
+plt.title('Rate of Synchrony Increase (Using Frame Number)')
+plt.xlabel('Dyad Type')
+plt.ylabel('Synchrony Slope (Synchrony per Frame)')
+plt.grid(axis='y')
+plt.show()
