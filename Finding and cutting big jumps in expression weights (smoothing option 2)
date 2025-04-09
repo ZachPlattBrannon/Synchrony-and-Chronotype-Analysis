@@ -1,0 +1,15 @@
+import numpy as np
+
+# Calculate frame-to-frame change in expression weights
+df['expr_change'] = df.groupby('subject')[['expr1_weight', 'expr2_weight', 'expr3_weight']].diff().abs().sum(axis=1)
+
+# Set a threshold for 'big jump' (e.g., >95th percentile of normal change)
+threshold = np.percentile(df['expr_change'].dropna(), 95)
+
+# Flag frames with big expression jumps
+df['big_jump'] = df['expr_change'] > threshold
+
+# Remove those frames
+clean_df = df[~df['big_jump']].copy()
+
+print(f"Removed {df['big_jump'].sum()} frames due to big expression jumps.")
