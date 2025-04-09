@@ -1,0 +1,9 @@
+# Regression plot (scatter + line), forgot to put this into other code
+plt.figure(figsize=(8,6))
+sns.regplot(data=dyad_df, x='chronotype_difference', y='synchrony', scatter=True, ci=None, color='blue')
+
+plt.title('Synchrony Predicted by Chronotype Difference')
+plt.xlabel('Chronotype Difference')
+plt.ylabel('Facial Synchrony')
+plt.grid(True)
+plt.show()
