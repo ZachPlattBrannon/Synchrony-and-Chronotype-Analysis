@@ -1,0 +1,14 @@
+# Calculate frame-to-frame change summed across all emotions
+df['expr_change'] = df.groupby('subject')[emotion_columns]\
+                      .diff().abs().sum(axis=1)
+
+# Set a threshold (e.g., 95th percentile of normal changes)
+threshold = df['expr_change'].quantile(0.95)
+
+# Flag frames with unusually large jumps
+df['big_jump'] = df['expr_change'] > threshold
+
+# Remove frames with big expression jumps
+clean_df = df[~df['big_jump']].copy()
+
+print(f"Removed {df['big_jump'].sum()} frames due to big expression changes.")
