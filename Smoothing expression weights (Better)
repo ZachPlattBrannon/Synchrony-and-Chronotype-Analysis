@@ -1,0 +1,20 @@
+import pandas as pd
+
+# Load your Hume wide-format Excel file
+df = pd.read_excel('hume_blank_template.xlsx')  # Update path to your actual file
+
+# Identify the emotion columns (write all columns that aren't emotions in next line)
+emotion_columns = df.columns.difference(['subject', 'frame', 'timestamp', 'race', 'gender', 'chronotype', 'tenure', 'team'])
+
+# Sort properly
+df = df.sort_values(['subject', 'frame'])
+
+# Smooth using a moving average over a window of 5 frames
+window_size = 5
+
+# Apply smoothing only to emotion columns
+df[emotion_columns] = df.groupby('subject', group_keys=False)[emotion_columns]\
+                        .rolling(window=window_size, center=True, min_periods=1)\
+                        .mean()
+
+# df is now smoothed!
