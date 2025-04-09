@@ -1,0 +1,90 @@
+import pandas as pd
+import numpy as np
+import itertools
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import pandas as pd
+import numpy as np
+import itertools
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Inputs:
+# clean_df: your cleaned facial expression data
+# subject_info: DataFrame with subject, chronotype_score
+# Assume clean_df includes columns: ['subject', 'frame', 'team', emotions...]
+
+# Define parameters
+emotion_columns = clean_df.columns.difference(['subject', 'frame', 'team', 'chronotype_score', 'chrono_group'])
+window_size = 100  # number of frames per window (~adjust for 30s based on frame rate)
+chronotype_similarity_cutoff = 10  # define "aligned" as <= 10 chronotype points apart
+
+# Merge subject_info into clean_df if not already merged
+clean_df = clean_df.merge(subject_info[['subject', 'chronotype_score']], on='subject', how='left')
+
+# List to store slopes for each dyad
+dyad_slopes = []
+
+# Analyze by team
+for team_id, team_data in clean_df.groupby('team'):
+    
+    subjects = team_data['subject'].unique()
+
+    # All possible dyads within team
+    for subj1, subj2 in itertools.combinations(subjects, 2):
+
+        subj1_data = team_data[team_data['subject'] == subj1]
+        subj2_data = team_data[team_data['subject'] == subj2]
+
+        # Merge by frame
+        merged = pd.merge(subj1_data, subj2_data, on=['frame'], suffixes=('_1', '_2'))
+
+        if merged.shape[0] < window_size:
+            continue  # skip very short recordings
+
+        # Calculate synchrony over sliding windows
+        synchrony_scores = []
+        frames = []
+
+        for start in range(0, merged.shape[0] - window_size, window_size // 2):  # 50% overlap
+            window = merged.iloc[start:start+window_size]
+            
+            # Correlate emotion time series
+            r = window[[col+'_1' for col in emotion_columns]].corrwith(
+                    window[[col+'_2' for col in emotion_columns]]).mean()
+            
+            synchrony_scores.append(r)
+            # Use center frame of the window
+            window_frame = window['frame'].iloc[window_size//2]
+            frames.append(window_frame)
+
+        if len(frames) < 2:
+            continue  # not enough data points to fit a line
+
+        # Fit a linear model: synchrony ~ frame
+        slope, intercept, r_value, p_value, std_err = linregress(frames, synchrony_scores)
+
+        # Get chronotype info
+        chrono1 = subject_info.loc[subject_info['subject'] == subj1, 'chronotype_score'].values[0]
+        chrono2 = subject_info.loc[subject_info['subject'] == subj2, 'chronotype_score'].values[0]
+        chrono_diff = abs(chrono1 - chrono2)
+
+        aligned = 'Aligned' if chrono_diff <= chronotype_similarity_cutoff else 'Mismatched'
+
+        dyad_slopes.append({
+            'team': team_id,
+            'subject1': subj1,
+            'subject2': subj2,
+            'chronotype_difference': chrono_diff,
+            'alignment': aligned,
+            'slope': slope
+        })
+
+# Convert results to DataFrame
+slope_df = pd.DataFrame(dyad_slopes)
+
+# Show first few results
+slope_df.head()
