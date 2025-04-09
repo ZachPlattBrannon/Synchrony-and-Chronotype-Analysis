@@ -1,0 +1,63 @@
+import pandas as pd
+import itertools
+
+# Load your cleaned expression dataset
+df = pd.read_excel('your_cleaned_file.xlsx')  # Update this path
+
+# Assume subject info (chronotype scores) is either:
+# (a) In another file
+# (b) In the main df (e.g., you merge it beforehand)
+
+# Let's pretend it's a separate DataFrame for now:
+subject_info = pd.DataFrame({
+    'subject': ['S1', 'S2', 'S3', 'S4'],
+    'chronotype_score': [45, 60, 55, 40]  # Example scores
+})
+
+# Merge chronotype info onto your main DataFrame
+df = df.merge(subject_info, on='subject', how='left')
+
+# Get the emotion columns (everything after 'team' and 'timestamp')
+emotion_columns = df.columns.difference(['subject', 'frame', 'timestamp', 'team', 'chronotype_score'])
+
+# Create an empty list to store dyads
+dyad_rows = []
+
+# Loop through each team separately
+for team_id, team_data in df.groupby('team'):
+
+    subjects = team_data['subject'].unique()
+    
+    # All possible subject pairs within a team (no self-pairs)
+    for subj1, subj2 in itertools.combinations(subjects, 2):
+
+        subj1_data = team_data[team_data['subject'] == subj1]
+        subj2_data = team_data[team_data['subject'] == subj2]
+
+        # Merge by frame or timestamp to align timepoints
+        merged = pd.merge(subj1_data, subj2_data, on=['frame'], suffixes=('_1', '_2'))
+        
+        # Compute synchrony: correlation across expressions
+        synchrony = merged[[col+'_1' for col in emotion_columns]].corrwith(
+                        merged[[col+'_2' for col in emotion_columns]]).mean()
+        
+        # Get chronotype scores
+        chrono1 = subject_info.loc[subject_info['subject'] == subj1, 'chronotype_score'].values[0]
+        chrono2 = subject_info.loc[subject_info['subject'] == subj2, 'chronotype_score'].values[0]
+        chrono_diff = abs(chrono1 - chrono2)
+        
+        dyad_rows.append({
+            'team': team_id,
+            'subject1': subj1,
+            'subject2': subj2,
+            'synchrony': synchrony,
+            'chronotype1': chrono1,
+            'chronotype2': chrono2,
+            'chronotype_difference': chrono_diff
+        })
+
+# Convert list to DataFrame
+dyad_df = pd.DataFrame(dyad_rows)
+
+# Show dyad table
+dyad_df.head()
