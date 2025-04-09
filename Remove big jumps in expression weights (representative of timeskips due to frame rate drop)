@@ -2,13 +2,16 @@
 df['expr_change'] = df.groupby('subject')[emotion_columns]\
                       .diff().abs().sum(axis=1)
 
-# Set a threshold (e.g., 95th percentile of normal changes)
+# Set threshold (global across all subjects) or you could do per-subject
 threshold = df['expr_change'].quantile(0.95)
 
-# Flag frames with unusually large jumps
+# Flag big jumps
 df['big_jump'] = df['expr_change'] > threshold
 
-# Remove frames with big expression jumps
-clean_df = df[~df['big_jump']].copy()
+# Now: Find all bad frames across all subjects
+bad_frames = df[df['big_jump']]['frame'].unique()
 
-print(f"Removed {df['big_jump'].sum()} frames due to big expression changes.")
+# Remove these bad frames globally for everyone
+clean_df = df[~df['frame'].isin(bad_frames)].copy()
+
+print(f"Removed {len(bad_frames)} frames globally due to big expression changes.")
